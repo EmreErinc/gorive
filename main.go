@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
@@ -88,20 +90,22 @@ func main() {
 		log.Fatalf("Unable to retrieve Drive client: %v", err)
 	}
 
-	defCount := 20
-	fetch(service, int64(defCount), "")
+	countPtr := flag.Int64("count", 20, "will fetch item count")
+	flag.Parse()
 
-	var customCount int64
-	if _, err := fmt.Scan(&customCount); err != nil {
-		log.Fatalf("Unable to read authorization code %v", err)
-	}
-	fetch(service, int64(customCount), "")
+	fmt.Printf("Fetching %d items\n", *countPtr)
+
+	fetch(service, *countPtr, "")
 
 }
 
-func fetch(service *drive.Service, count int64, token string) {
-	result, err := service.Files.List().PageSize(count).
-		Fields("files(*)").Do() // you should give parameter instead of '*' which parameter you want. '*' returns all fields
+func fetch(service *drive.Service, count int64, nextPageToken string) {
+	result, err := service.Files.
+		List(). // what will you do
+		PageSize(count). // how many item will fetch
+		Fields("*"). // which fields will fetch. ex: nextPageToken, files(id, name) etc.
+		PageToken(nextPageToken). // which page will fetch
+		Do() // do it!!
 	if err != nil {
 		log.Fatalf("Unable to retrieve files: %v", err)
 	}
@@ -123,6 +127,29 @@ func fetch(service *drive.Service, count int64, token string) {
 	for _, value := range tree {
 		for _, v := range value {
 			fmt.Printf("%s\n", v)
+		}
+	}
+
+	if result.NextPageToken != "" {
+		fmt.Printf("\nContinue to fetch %d item, Press Enter...\n", count)
+
+		for {
+			// only read single characters, the rest will be ignored!!
+			consoleReader := bufio.NewReaderSize(os.Stdin, 1)
+			fmt.Print(">")
+			input, _ := consoleReader.ReadByte()
+
+			ascii := input
+
+			// ESC = 27 and Ctrl-C = 3
+			if ascii == 27 || ascii == 3 {
+				fmt.Println("Exiting...")
+				os.Exit(0)
+			}
+
+			if ascii == 10 {
+				fetch(service, count, result.NextPageToken)
+			}
 		}
 	}
 }
