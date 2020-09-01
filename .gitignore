@@ -15,5 +15,5 @@
 # vendor/
 
 # Credentials
-credentials.json
-token.json
+pkg/auth/credentials.json
+pkg/auth/token.json
