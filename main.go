@@ -177,7 +177,7 @@ func fetch(service *drive.Service, count int64, nextPageToken string) {
 							fmt.Printf("an error occurred while '%s' dowloading\n", i.Name)
 						}
 
-						fmt.Printf("Download : %s", dlFile)
+						fmt.Printf("\n\nDownload : %s", dlFile)
 					}
 				}
 			}
@@ -215,39 +215,40 @@ func DownloadFile(t http.RoundTripper, f *drive.File) (string, error) {
 		return "", err
 	}
 
-	//res := strings.TrimLeft(string(body), "<HEAD>\n<TITLE>Moved Temporarily</TITLE>\n</HEAD>\n<BODY BGCOLOR=\"#FFFFFF\" TEXT=\"#000000\">\n<H1>Moved Temporarily</H1>\nThe document has moved <A HREF=\"")
-	//fmt.Println(res)
+	//res := strings.TrimSpace(string(body))
+	//res = strings.Trim(res, "HREF=\"")
+	//fmt.Print(res)
 
-	// Moved Temporarily
-	//xml := strings.NewReader(string(body))
-	//result, err := xj.Convert(xml)
-	//if err != nil {
-	//	panic("An error occurred while xml parsing")
-	//}
+	//res := strings.ReplaceAll(string(body), " ", "")
+	//res = strings.ReplaceAll(res, "BODY", "")
+	//res = strings.ReplaceAll(res, "H1", "")
+	//res = strings.ReplaceAll(res, "HTML", "")
+	//res = strings.ReplaceAll(res, "HEAD", "")
+	//res = strings.ReplaceAll(res, "TITLE", "")
+	//res = strings.ReplaceAll(res, "</>", "")
+	//res = strings.ReplaceAll(res, "<>", "")
+	res := strings.ReplaceAll(string(body), "<HTML>\n<HEAD>\n<TITLE>Moved Temporarily</TITLE>\n</HEAD>\n<BODY BGCOLOR=\"#FFFFFF\" TEXT=\"#000000\">\n<H1>Moved Temporarily</H1>\nThe document has moved <A HREF=\"", "")
+	res = strings.ReplaceAll(res, "\">here</A>.\n</BODY>\n</HTML>", "")
+	res = strings.TrimSpace(res)
+	fmt.Print(res)
 
-
-
-	//result1 :=strings.ReplaceAll(result.String(), "{\"HTML\": {\"HEAD\": {\"TITLE\": \"Moved Temporarily\"}, \"BODY\": {\"#content\": \".\", \"A\": {\"#content\": \"here\", \"-HREF\": \"", "")
-	//result1 = strings.ReplaceAll(result1, "\"}, \"-BGCOLOR\": \"#FFFFFF\", \"-TEXT\": \"#000000\", \"H1\": \"Moved Temporarily\"}}}", "")
-	//
-
-	//req, err = http.NewRequest("GET", result1, nil)
-	//if err != nil {
-	//	fmt.Printf("An error occurred: %v\n", err)
-	//	return "", err
-	//}
-	//resp, err = t.RoundTrip(req)
-	//// Make sure we close the Body later
-	//defer resp.Body.Close()
-	//if err != nil {
-	//	fmt.Printf("An error occurred: %v\n", err)
-	//	return "", err
-	//}
-	//body, err = ioutil.ReadAll(resp.Body)
-	//if err != nil {
-	//	fmt.Printf("An error occurred: %v\n", err)
-	//	return "", err
-	//}
+	req, err = http.NewRequest("GET", res, nil)
+	if err != nil {
+		fmt.Printf("An error occurred: %v\n", err)
+		return "", err
+	}
+	resp, err = t.RoundTrip(req)
+	// Make sure we close the Body later
+	defer resp.Body.Close()
+	if err != nil {
+		fmt.Printf("An error occurred: %v\n", err)
+		return "", err
+	}
+	body, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("An error occurred: %v\n", err)
+		return "", err
+	}
 
 	path := RootDirectory() + "/" + f.Name
 	err = ioutil.WriteFile(path, body, 0644)
